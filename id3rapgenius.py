@@ -1,6 +1,7 @@
-﻿#!/usr/bin/env python
-#Python 2.7
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python2
+# Python 2.7
+# https://github.com/cvzi/genius-downloader
+# Download lyrics from rap.genius.com and saves the lyrics in a mp3 or m4a file
 
 import sys
 import urllib
@@ -13,15 +14,14 @@ from mutagen.id3 import USLT
 local = {
     'baseurl' : "http://rap.genius.com", # without trailing slash
     'basesearchurl' : "http://genius.com", # same here
-    'usage' : """Downloads lyrics from rap.genius.com and saves the in a mp3 or m4a file
+    'usage' : """Downloads lyrics from rap.genius.com and saves the lyrics in a mp3 or m4a file
 You can select the correct lyrics from the first 20 search results.
-https://github.com/cvzi/Python/tree/master/Id3Rapgenius
 
 Usage: python id3rapgenius.py filename artist songname
 
 This was inteded as a Mp3Tag extension.
 To add it to the Mp3Tag context menu, do the following steps in Mp3Tag:
-  * Open Tools -> Options -> Tools 
+  * Open Tools -> Options -> Tools
   * Click on the "New" icon
   * Enter the name that shall appear in the context menu
   * For path choose your python.exe
@@ -51,10 +51,10 @@ def getUrl(url):
     thread1.start()
     try:
         req = urllib2.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        data = urllib2.urlopen(req).read()      
+        data = urllib2.urlopen(req).read()
     finally:
         thread1.exit()
-    
+
     #data = unicode(data,'UTF8')
     #data = data.encode("utf-8")
     return data
@@ -83,7 +83,7 @@ def setLyrics(filepath,lyrics):
   return True
 
 if __name__ == "__main__":
-  
+
   if len(sys.argv) != 4:
     print "Error: Wrong argument number"
     print "\n"+local['usage']
@@ -96,14 +96,14 @@ if __name__ == "__main__":
   print filename,artist,song
 
   foundsong = False
-  
+
   url = local['baseurl']+'/'+artist.replace(" ","-")+'-'+song.replace(" ","-")+"-lyrics"
   print "Trying exact name: "+artist.replace(" ","-")+'-'+song.replace(" ","-")
   try:
     html = getUrl(url)
   except urllib2.HTTPError:
     html = "<h1>Looks like you came up short!<br>(Page not found)</h1>"
-    
+
   if not "<h1>Looks like you came up short!<br>(Page not found)</h1>" in html:
     # Page exists:
     foundsong = True
@@ -127,7 +127,7 @@ if __name__ == "__main__":
         # Page exists:
         foundsong = True
         print "Found Lyrics!"
-  
+
     if not foundsong:
       # Try to search the song:
       print "No result for:"
@@ -139,7 +139,7 @@ if __name__ == "__main__":
       print "Artist: "+searchartist
       print "Song:   "+searchsong
       searchurl = local['basesearchurl']+"/search?hide_unexplained_songs=false&q="+urllib.quote_plus(searchartist)+"%20"+urllib.quote_plus(searchsong)
-      
+
 
       try:
           html = getUrl(searchurl)
@@ -148,7 +148,7 @@ if __name__ == "__main__":
           print "Could not open: "+searchurl
           print e
           exit()
-    
+
       resultlist = html.split('<ul class="search_results song_list primary_list">')[1].split('</ul>')[0].strip()
 
       if "" == resultlist:
@@ -160,19 +160,19 @@ if __name__ == "__main__":
         while "" != resultlist:
           txt,resultlist = resultlist.split("</li>",1)
           resultlist = resultlist.strip()
-          
+
           resulturl = txt.split('<a href="')[1].split('"')[0].strip()
-          
+
           resultsongname = txt.split("<span class='song_title'>")[1].split("</span>")[0]
           resultsongname = re.sub('<[^<]+?>', '', resultsongname ).strip()
           resultsongname = resultsongname .replace('\xe2\x80\x93','-')
-          
+
           resultartist = txt.split("<span class='artist_name'>")[1].split("</span>")[0]
           resultartist = re.sub('<[^<]+?>', '', resultartist).strip()
           resultartist = resultartist.replace('\xe2\x80\x93','-').replace('&nbsp;',' ')
 
-          resultname = resultartist + " - " + resultsongname 
-          
+          resultname = resultartist + " - " + resultsongname
+
           results.append([resultname,resulturl])
           print "%2d: %s" % (i,resultname)
           i += 1
@@ -192,7 +192,7 @@ if __name__ == "__main__":
             print "Sorry, wrong Number!"
           except AssertionError:
             print "Wtf?!"
-        
+
         print ""
         print "Downloading lyrics #%d: %s" % (val,results[val-1][0])
         print ""
@@ -205,7 +205,7 @@ if __name__ == "__main__":
             print "Could not open: "+url
             print e
             exit()
-        
+
         if not "<h1>Looks like you came up short!<br>(Page not found)</h1>" in html:
           # Page exists:
           foundsong = True
@@ -216,8 +216,8 @@ if __name__ == "__main__":
 
   if foundsong:
     lyrics = html.split('<div class="lyrics"')[1].split(">",1)[1].split("</div>")[0]
-    
-    lyrics = re.sub('<[^<]+?>', '', lyrics).strip()
+
+    lyrics = re.sub('<[^<]+?>', '', lyrics).strip().replace("amp;","").replace("\r\n", "\n").replace("\n","\r\n")
     print "---------------------------"
     print lyrics
     print "---------------------------"
