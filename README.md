@@ -21,4 +21,4 @@ To add it to the Mp3Tag context menu, do the following steps in Mp3Tag:
  * For parameter use: C:\pathtofile\id3rapgenius.py "%_path%" "%artist%" "%title%"
  * Accept the "for all selected files" option
  
-![Mp3Tag instructions](https://raw.githubusercontent.com/cvzi/Python/master/Id3Rapgenius/id3rapgenius.jpg)
+![Mp3Tag instructions](https://raw.githubusercontent.com/cvzi/genius-downloader/master/id3rapgenius.jpg)
