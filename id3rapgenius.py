@@ -215,7 +215,7 @@ if __name__ == "__main__":
 
 
   if foundsong:
-    lyrics = html.split('<div class="lyrics"')[1].split(">",1)[1].split("</div>")[0]
+    lyrics = html.split('<lyrics ')[1].split(">",1)[1].split("</lyrics>")[0]
 
     lyrics = re.sub('<[^<]+?>', '', lyrics).strip().replace("amp;","").replace("\r\n", "\n").replace("\n","\r\n")
     print "---------------------------"
