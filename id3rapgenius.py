@@ -8,6 +8,7 @@ import urllib
 import urllib2
 import re
 import threading
+import htmlentitydefs
 from mutagen import *
 from mutagen.id3 import USLT
 
@@ -28,6 +29,38 @@ To add it to the Mp3Tag context menu, do the following steps in Mp3Tag:
   * For parameter use: C:\pathtofile\id3rapgenius.py "%_path%" "%artist%" "%title%"
   * Accept the "for all selected files" option"""
     }
+
+
+# http://effbot.org/zone/re-sub.htm#unescape-html
+
+##
+# Removes HTML or XML character references and entities from a text string.
+#
+# @param text The HTML (or XML) source text.
+# @return The plain text, as a Unicode string, if necessary.
+
+def unescape(text):
+    def fixup(m):
+        text = m.group(0)
+        if text[:2] == "&#":
+            # character reference
+            try:
+                if text[:3] == "&#x":
+                    return unichr(int(text[3:-1], 16))
+                else:
+                    return unichr(int(text[2:-1]))
+            except ValueError:
+                pass
+        else:
+            # named entity
+            try:
+                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+            except KeyError:
+                pass
+        return text # leave as is
+    return re.sub("&#?\w+;", fixup, text)
+
+
 
 # Show progess with dots . . .
 class doingSth(threading.Thread):
@@ -217,9 +250,17 @@ if __name__ == "__main__":
   if foundsong:
     lyrics = html.split('<lyrics ')[1].split(">",1)[1].split("</lyrics>")[0]
 
-    lyrics = re.sub('<[^<]+?>', '', lyrics).strip().replace("amp;","").replace("\r\n", "\n").replace("\n","\r\n")
+    lyrics = re.sub('<[^<]+?>', '', lyrics).strip().replace("\r\n", "\n").replace("\n","\r\n")
+    lyrics = unescape(lyrics)
     print "---------------------------"
-    print lyrics
+    try:
+        print lyrics
+    except UnicodeEncodeError:
+        try:
+            print lyrics.encode(sys.stdout.encoding, errors='replace')
+        except:
+            print "##Sorry, encoding problems with terminal##"
+            pass
     print "---------------------------"
     if setLyrics(filename,lyrics):
       print "Saved lyrics to file "+filename
