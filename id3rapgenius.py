@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 # Python 2.7
 # https://github.com/cvzi/genius-downloader
 # Download lyrics from rap.genius.com and saves the lyrics in a mp3 or m4a file
@@ -17,9 +18,7 @@ local = {
     'basesearchurl' : "http://genius.com", # same here
     'usage' : """Downloads lyrics from rap.genius.com and saves the lyrics in a mp3 or m4a file
 You can select the correct lyrics from the first 20 search results.
-
 Usage: python id3rapgenius.py filename artist songname
-
 This was inteded as a Mp3Tag extension.
 To add it to the Mp3Tag context menu, do the following steps in Mp3Tag:
   * Open Tools -> Options -> Tools
@@ -253,9 +252,17 @@ if __name__ == "__main__":
   if foundsong:
     lyrics = html.split('<lyrics ')[1].split(">",1)[1].split("</lyrics>")[0]
 
+    # Remove <script>...</script>
+    while "<script" in lyrics:
+        before = lyrics.split("<script")[0]
+        after = lyrics.split("</script>",1)[1]
+        lyrics = before + after
+    
+    # Remove all html tags and add windows line breaks
     lyrics = re.sub('<[^<]+?>', '', lyrics).strip().replace("\r\n", "\n").replace("\n","\r\n")
     lyrics = unescape(lyrics)
     print "---------------------------"
+    
     try:
         print lyrics
     except UnicodeEncodeError:
@@ -273,4 +280,4 @@ if __name__ == "__main__":
       threading._sleep(10)
   else:
     print "No song results for "+song+" by "+artist
-    threading._sleep(10)
+threading._sleep(10)
