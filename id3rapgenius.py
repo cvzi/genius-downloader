@@ -257,6 +257,11 @@ if __name__ == "__main__":
         before = lyrics.split("<script")[0]
         after = lyrics.split("</script>",1)[1]
         lyrics = before + after
+
+    # Replace accents, prime and apostrophe with 'closing single quotation mark'
+    primes = ["´","`","’","′","ʻ","‘"]
+    for symbol in primes:
+        lyrics = lyrics.replace(symbol, "'")
     
     # Remove all html tags and add windows line breaks
     lyrics = re.sub('<[^<]+?>', '', lyrics).strip().replace("\r\n", "\n").replace("\n","\r\n")
