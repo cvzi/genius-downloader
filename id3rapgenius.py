@@ -250,7 +250,8 @@ if __name__ == "__main__":
 
 
   if foundsong:
-    lyrics = html.split('<lyrics ')[1].split(">",1)[1].split("</lyrics>")[0]
+    
+    lyrics = html.split('<lyrics')[1].split(">",1)[1].split("</lyrics>")[0]
 
     # Remove <script>...</script>
     while "<script" in lyrics:
