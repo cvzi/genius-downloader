@@ -13,6 +13,7 @@ import htmlentitydefs
 from mutagen import *
 from mutagen.id3 import USLT
 
+
 local = {
     'baseurl' : "http://rap.genius.com", # without trailing slash
     'basesearchurl' : "http://genius.com", # same here
@@ -266,7 +267,17 @@ if __name__ == "__main__":
     
     # Remove all html tags and add windows line breaks
     lyrics = re.sub('<[^<]+?>', '', lyrics).strip().replace("\r\n", "\n").replace("\n","\r\n")
-    lyrics = unescape(lyrics)
+    
+    # Replace &XXX; html encoding line by line and remove encoding with str()
+    lines = lyrics.split("\n")
+    lyrics = []
+    for line in lines:
+        esc = unescape(line)
+        lyrics.append(str(esc))
+    
+    lyrics = "\n".join(lyrics)
+    
+    
     print "---------------------------"
     
     try:
