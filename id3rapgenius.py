@@ -88,6 +88,8 @@ def getUrl(url):
     try:
         req = urllib2.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         data = urllib2.urlopen(req).read()
+    except KeyboardInterrupt as ki:
+        raise ki # allow CTRL-C to interrupt
     finally:
         thread1.exit()
 
@@ -139,6 +141,8 @@ if __name__ == "__main__":
     html = getUrl(url)
   except urllib2.HTTPError:
     html = "<h1>Looks like you came up short!<br>(Page not found)</h1>"
+  except KeyboardInterrupt:
+    sys.exit() # Exit program on Ctrl-C
 
   if not "<h1>Looks like you came up short!<br>(Page not found)</h1>" in html:
     # Page exists:
@@ -159,6 +163,9 @@ if __name__ == "__main__":
           html = getUrl(url)
       except urllib2.HTTPError:
           html = "<h1>Looks like you came up short!<br>(Page not found)</h1>"
+      except KeyboardInterrupt:
+          sys.exit() # Exit program on Ctrl-C
+    
       if not "<h1>Looks like you came up short!<br>(Page not found)</h1>" in html:
         # Page exists:
         foundsong = True
@@ -184,7 +191,9 @@ if __name__ == "__main__":
           print "Could not open: "+searchurl
           print e
           exit()
-
+      except KeyboardInterrupt:
+          sys.exit() # Exit program on Ctrl-C
+    
       resultlist = html.split('<ul class="search_results song_list primary_list">')[1].split('</ul>')[0].strip()
 
       if "" == resultlist:
@@ -241,7 +250,9 @@ if __name__ == "__main__":
             print "Could not open: "+url
             print e
             exit()
-
+        except KeyboardInterrupt:
+            sys.exit() # Exit program on Ctrl-C
+          
         if not "<h1>Looks like you came up short!<br>(Page not found)</h1>" in html:
           # Page exists:
           foundsong = True
