@@ -26,7 +26,7 @@ To add it to the Mp3Tag context menu, do the following steps in Mp3Tag:
   * Click on the "New" icon
   * Enter the name that shall appear in the context menu
   * For path choose your python.exe
-  * For parameter use: C:\pathtofile\id3rapgenius.py "%_path%" "%artist%" "%title%"
+  * For parameter use: C:\pathtofile\id3rapgenius.py "%_path%" "$replace(%artist%,","")" "$replace(%title%,","")"
   * Accept the "for all selected files" option"""
     }
 
