@@ -7,7 +7,7 @@ Written in Python using the mutagen module.
 
 Required:
  * Python 2.7
- * [Mutagen](https://bitbucket.org/lazka/mutagen) python module
+ * [Mutagen](https://bitbucket.org/lazka/mutagen) python module `pip2 install mutagen` 
 
 
 **Usage**: python id3rapgenius.py filename artist songname

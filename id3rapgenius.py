@@ -12,6 +12,7 @@ import threading
 import htmlentitydefs
 from mutagen import *
 from mutagen.id3 import USLT
+import mutagen.mp4
 
 
 local = {
