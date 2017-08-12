@@ -10,14 +10,15 @@ import urllib2
 import re
 import threading
 import htmlentitydefs
+import json
 from mutagen import *
 from mutagen.id3 import USLT
 import mutagen.mp4
 
-
 local = {
     'baseurl' : "http://rap.genius.com", # without trailing slash
     'basesearchurl' : "http://genius.com", # same here
+    'baseapiurl' : "https://genius.com/api", # same here
     'usage' : """Downloads lyrics from rap.genius.com and saves the lyrics in a mp3 or m4a file
 You can select the correct lyrics from the first 20 search results.
 Usage: python id3rapgenius.py filename artist songname
@@ -83,20 +84,37 @@ class doingSth(threading.Thread):
       threading._sleep(0.4)
 
 # Download from url with progress dots
-def getUrl(url):
-    thread1 = doingSth()
-    thread1.start()
+def getUrl(url, getEncoding=False):
     try:
-        req = urllib2.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        data = urllib2.urlopen(req).read()
-    except KeyboardInterrupt as ki:
-        raise ki # allow CTRL-C to interrupt
-    finally:
-        thread1.exit()
+        thread1 = doingSth()
+        thread1.start()
+        fs = None
+        try:
+            req = urllib2.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            fs = urllib2.urlopen(req)
+            data = fs.read()
+        except KeyboardInterrupt as ki:
+            thread1.exit()
+            raise ki # allow CTRL-C to interrupt
+        finally:
+            if fs is not None:
+                fs.close()
+            thread1.exit()
 
-    #data = unicode(data,'UTF8')
-    #data = data.encode("utf-8")
-    return data
+        #data = unicode(data,'UTF8')
+        #data = data.encode("utf-8")
+        
+        if getEncoding:
+            try:
+                enc = fs.headers.get("Content-Type").split("charset=")[1]
+            except:
+                enc = "utf-8"
+            return data, enc
+        
+        return data
+    except Exception as e:
+        thread1.exit()
+        raise e
 
 # Set Lyrics of mp3 or m4a file
 def setLyrics(filepath,lyrics):
@@ -129,8 +147,8 @@ if __name__ == "__main__":
     quit(1)
 
   filename = sys.argv[1]
-  artist = sys.argv[2]
-  song = sys.argv[3]
+  artist = sys.argv[2].decode(encoding="windows-1252").encode('utf-8').strip()
+  song = sys.argv[3].decode(encoding="windows-1252").encode('utf-8').strip()
 
   print filename,artist,song
 
@@ -156,7 +174,7 @@ if __name__ == "__main__":
         tartist = artist[4:]
       else:
         tartist = artist
-      tartist = tartist.split("(")[0].split("feat")[0].split("Feat")[0].split("ft.")[0].split("Ft.")[0]
+      tartist = tartist.split("(")[0].split("feat")[0].split("Feat")[0].split("ft.")[0].split("Ft.")[0].strip()
       print filename,tartist,song
       url = local['baseurl']+'/'+tartist.replace(" ","-")+'-'+song.replace(" ","-")+"-lyrics"
       print "Trying exact name: "+tartist.replace(" ","-")+'-'+song.replace(" ","-")
@@ -175,47 +193,41 @@ if __name__ == "__main__":
     if not foundsong:
       # Try to search the song:
       print "No result for:"
-      searchartist = artist.split("(")[0].split("feat")[0].split("Feat")[0].split("ft.")[0].split("Ft.")[0].replace("The ","").replace("the ","")
-      searchsong = song.split("(")[0].split("feat")[0].split("Feat")[0].split("ft.")[0].split("Ft.")[0]
+      searchartist = artist.split("(")[0].split("feat")[0].split("Feat")[0].split("ft.")[0].split("Ft.")[0].replace("The ","").replace("the ","").strip()
+      searchsong = song.split("(")[0].split("feat")[0].split("Feat")[0].split("ft.")[0].split("Ft.")[0].strip()
       print artist + " - " + song
       print ""
       print "Searching on website with:"
       print "Artist: "+searchartist
       print "Song:   "+searchsong
       searchurl = local['basesearchurl']+"/search?hide_unexplained_songs=false&q="+urllib.quote_plus(searchartist)+"%20"+urllib.quote_plus(searchsong)
-
-
+          
       try:
-          html = getUrl(searchurl)
-
+        text, encoding = getUrl(local["baseapiurl"] + "/search/song?q=" + urllib.quote_plus(searchartist)+"%20"+urllib.quote_plus(searchsong), getEncoding=True)
       except urllib2.HTTPError as e:
-          print "Could not open: "+searchurl
-          print e
-          exit()
+        print "Could not open: "+searchurl
+        print e
+        exit()
       except KeyboardInterrupt:
-          sys.exit() # Exit program on Ctrl-C
-    
-      resultlist = html.split('<ul class="search_results song_list primary_list">')[1].split('</ul>')[0].strip()
+        sys.exit() # Exit program on Ctrl-C
+          
+      obj = json.loads(text, encoding=encoding)
+      results_length = 0
 
-      if "" == resultlist:
+      assert obj["response"]["sections"][0]["type"] == "song", "Wrong type in json result"
+      results_length = len(obj["response"]["sections"][0]["hits"])
+      
+      if 0 == results_length:
         print "0 songs found!"
       else:
         print "## -------------------------"
         results = []
         i = 1
-        while "" != resultlist:
-          txt,resultlist = resultlist.split("</li>",1)
-          resultlist = resultlist.strip()
+        for hit in obj["response"]["sections"][0]["hits"]:
+          resulturl = hit["result"]["url"].encode(encoding="utf-8")
 
-          resulturl = txt.split('<a href="')[1].split('"')[0].strip()
-
-          resultsongname = txt.split("<span class='song_title'>")[1].split("</span>")[0]
-          resultsongname = re.sub('<[^<]+?>', '', resultsongname ).strip()
-          resultsongname = resultsongname .replace('\xe2\x80\x93','-')
-
-          resultartist = txt.split("<span class='artist_name'>")[1].split("</span>")[0]
-          resultartist = re.sub('<[^<]+?>', '', resultartist).strip()
-          resultartist = resultartist.replace('\xe2\x80\x93','-').replace('&nbsp;',' ')
+          resultsongname = hit["result"]["title_with_featured"]
+          resultartist = hit["result"]["primary_artist"]["name"]
 
           resultname = resultartist + " - " + resultsongname
 
