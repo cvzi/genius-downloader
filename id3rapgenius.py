@@ -230,7 +230,7 @@ if __name__ == "__main__":
           resultartist = hit["result"]["primary_artist"]["name"]
 
           resultname = resultartist + " - " + resultsongname
-          resultname = resultname.replace(u"\u200b", u"").replace(u"\xa0", u" ").strip().encode('ascii', 'ignore')
+          resultname = resultname.replace(u"\u200b", u"").replace(u"\xa0", u" ").strip()
 
           results.append([resultname,resulturl])
           print "%2d: %s" % (i,resultname)
