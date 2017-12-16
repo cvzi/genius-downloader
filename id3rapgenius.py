@@ -150,7 +150,7 @@ if __name__ == "__main__":
   artist = sys.argv[2].decode(encoding="windows-1252").encode('utf-8').strip()
   song = sys.argv[3].decode(encoding="windows-1252").encode('utf-8').strip()
 
-  print filename,artist,song
+  print '"%s" "%s" "%s"' % (filename,artist,song)
 
   foundsong = False
 
@@ -175,9 +175,9 @@ if __name__ == "__main__":
       else:
         tartist = artist
       tartist = tartist.split("(")[0].split("feat")[0].split("Feat")[0].split("ft.")[0].split("Ft.")[0].strip()
-      print filename,tartist,song
+      print filename.encode(encoding="ibm437", errors="ignore"),tartist.encode(encoding="ibm437", errors="ignore"),song.encode(encoding="ibm437", errors="ignore")
       url = local['baseurl']+'/'+tartist.replace(" ","-")+'-'+song.replace(" ","-")+"-lyrics"
-      print "Trying exact name: "+tartist.replace(" ","-")+'-'+song.replace(" ","-")
+      print "Trying exact name: "+tartist.replace(" ","-").encode(encoding="ibm437", errors="ignore")+'-'+song.replace(" ","-").encode(encoding="ibm437", errors="ignore")
       try:
           html = getUrl(url)
       except urllib2.HTTPError:
@@ -198,8 +198,8 @@ if __name__ == "__main__":
       print artist + " - " + song
       print ""
       print "Searching on website with:"
-      print "Artist: "+searchartist
-      print "Song:   "+searchsong
+      print "Artist: "+searchartist.encode(encoding="ibm437", errors="ignore")
+      print "Song:   "+searchsong.encode(encoding="ibm437", errors="ignore")
       searchurl = local['basesearchurl']+"/search?hide_unexplained_songs=false&q="+urllib.quote_plus(searchartist)+"%20"+urllib.quote_plus(searchsong)
           
       try:
@@ -233,7 +233,7 @@ if __name__ == "__main__":
           resultname = resultname.replace(u"\u200b", u"").replace(u"\xa0", u" ").strip()
 
           results.append([resultname,resulturl])
-          print "%2d: %s" % (i,resultname)
+          print "%2d: %s" % (i, resultname.encode(encoding="ibm437", errors="ignore"))
           i += 1
         print "---------------------------"
         while True:
@@ -278,6 +278,12 @@ if __name__ == "__main__":
   if foundsong:
     
     lyrics = html.split('<div class="lyrics">')[1].split("</div>")[0]
+    
+    
+    if "for this song have yet to be released" in lyrics:
+      print "Lyrics for this song have yet to be released. Please check back once the song has been released."
+      threading._sleep(10)
+      exit(0)
 
     # Remove <script>...</script>
     while "<script" in lyrics:
@@ -309,17 +315,17 @@ if __name__ == "__main__":
         print lyrics
     except UnicodeEncodeError:
         try:
-            print lyrics.encode(sys.stdout.encoding, errors='replace')
+            print lyrics.encode(sys.stdout.encoding, errors='ignore')
         except:
             print "##Sorry, encoding problems with terminal##"
             pass
     print "---------------------------"
     if setLyrics(filename,lyrics):
       print "Saved lyrics to file "+filename
-      threading._sleep(2)
+      threading._sleep(3)
     else:
       print "Could not save lyrics to file "+filename
       threading._sleep(10)
   else:
     print "No song results for "+song+" by "+artist
-threading._sleep(10)
+    threading._sleep(10)
