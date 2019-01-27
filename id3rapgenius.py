@@ -140,28 +140,34 @@ def setLyrics(filepath,lyrics):
   return True
 
 if __name__ == "__main__":
-
+  
   if len(sys.argv) != 4:
     print "Error: Wrong argument number"
     print "\n"+local['usage']
     quit(1)
 
+
   filename = sys.argv[1]
   artist = sys.argv[2].decode(encoding="windows-1252").encode('utf-8').strip()
   song = sys.argv[3].decode(encoding="windows-1252").encode('utf-8').strip()
 
-  print '"%s" "%s" "%s"' % (filename,artist,song)
+  print "%r\n%r\n%r" % (sys.argv[1], sys.argv[2], sys.argv[3])
 
   foundsong = False
 
   url = local['baseurl']+'/'+artist.replace(" ","-")+'-'+song.replace(" ","-")+"-lyrics"
-  print "Trying exact name: "+artist.replace(" ","-")+'-'+song.replace(" ","-")
+
+  try:
+    print "Trying exact name: "+artist.replace(" ","-")+'-'+song.replace(" ","-")
+  except:
+    print "Trying exact name: %r - %r" % (artist.replace(" ","-"), song.replace(" ","-"))
   try:
     html = getUrl(url)
   except urllib2.HTTPError:
     html = "<h1>Looks like you came up short!<br>(Page not found)</h1>"
   except KeyboardInterrupt:
     sys.exit() # Exit program on Ctrl-C
+
 
   if not "<h1>Looks like you came up short!<br>(Page not found)</h1>" in html:
     # Page exists:
@@ -175,9 +181,21 @@ if __name__ == "__main__":
       else:
         tartist = artist
       tartist = tartist.split("(")[0].split("feat")[0].split("Feat")[0].split("ft.")[0].split("Ft.")[0].strip()
-      print filename.encode(encoding="ibm437", errors="ignore"),tartist.encode(encoding="ibm437", errors="ignore"),song.encode(encoding="ibm437", errors="ignore")
-      url = local['baseurl']+'/'+tartist.replace(" ","-")+'-'+song.replace(" ","-")+"-lyrics"
-      print "Trying exact name: "+tartist.replace(" ","-").encode(encoding="ibm437", errors="ignore")+'-'+song.replace(" ","-").encode(encoding="ibm437", errors="ignore")
+      try:
+        print filename.encode(encoding="ibm437", errors="ignore"),tartist.encode(encoding="ibm437", errors="ignore"),song.encode(encoding="ibm437", errors="ignore")
+      except UnicodeDecodeError:
+        try:
+          print filename.encode(encoding="ascii", errors="ignore"),tartist.encode(encoding="ascii", errors="ignore"),song.encode(encoding="ascii", errors="ignore")
+        except:
+          pass
+      url = local['baseurl']+'/'+tartist.replace(" ","-").replace("&", "and")+'-'+song.replace(" ","-").replace("&", "and")+"-lyrics"
+      try:
+        print "Trying exact name: "+tartist.replace(" ","-").replace("&", "and").encode(encoding="ibm437", errors="ignore")+'-'+song.replace(" ","-").replace("&", "and").encode(encoding="ibm437", errors="ignore")
+      except UnicodeDecodeError:
+        try:
+          print "Trying exact name: "+tartist.replace(" ","-").replace("&", "and").encode(encoding="ascii", errors="ignore")+'-'+song.replace(" ","-").replace("&", "and").encode(encoding="ascii", errors="ignore")
+        except:
+          print "Trying exact name"
       try:
           html = getUrl(url)
       except urllib2.HTTPError:
@@ -195,11 +213,17 @@ if __name__ == "__main__":
       print "No result for:"
       searchartist = artist.split("(")[0].split("feat")[0].split("Feat")[0].split("ft.")[0].split("Ft.")[0].replace("The ","").replace("the ","").strip()
       searchsong = song.split("(")[0].split("feat")[0].split("Feat")[0].split("ft.")[0].split("Ft.")[0].strip()
-      print artist + " - " + song
+      try:
+        print artist + " - " + song
+      except:
+        print "%r - %r" % (artist, song)
       print ""
       print "Searching on website with:"
-      print "Artist: "+searchartist.encode(encoding="ibm437", errors="ignore")
-      print "Song:   "+searchsong.encode(encoding="ibm437", errors="ignore")
+      try:
+        print "Artist: "+searchartist.decode("utf8").encode("ibm437")
+        print "Song:   "+searchsong.decode("utf8").encode("ibm437")
+      except:
+        pass 
       searchurl = local['basesearchurl']+"/search?hide_unexplained_songs=false&q="+urllib.quote_plus(searchartist)+"%20"+urllib.quote_plus(searchsong)
           
       try:
@@ -233,12 +257,18 @@ if __name__ == "__main__":
           resultname = resultname.replace(u"\u200b", u"").replace(u"\xa0", u" ").strip()
 
           results.append([resultname,resulturl])
-          print "%2d: %s" % (i, resultname.encode(encoding="ibm437", errors="ignore"))
+          try:
+            print "%2d: %s" % (i, resultname.encode(encoding="ibm437", errors="ignore"))
+          except:
+            print "%2d: %r" % (i, resultname)
           i += 1
         print "---------------------------"
         while True:
           print "Please choose song          (0 to exit)"
-          print "close to: "+artist + " - " + song
+          try:
+            print "close to: "+artist.decode("utf8").encode("ibm437") + " - " + song.decode("utf8").encode("ibm437")
+          except:
+            pass
           inp = input()
           try:
             val = int(inp)
@@ -253,7 +283,10 @@ if __name__ == "__main__":
             print "Wtf?!"
 
         print ""
-        print "Downloading lyrics #%d: %s" % (val,results[val-1][0])
+        try:
+          print "Downloading lyrics #%d: %s" % (val,results[val-1][0])
+        except:
+          print "Downloading lyrics #%d: %r" % (val,results[val-1][0])
         print ""
         #url = local['baseurl']+results[val-1][1]
         url = results[val-1][1] # in newer versions, the url seems to be complete already
@@ -308,7 +341,7 @@ if __name__ == "__main__":
     
     lyrics = "\n".join(lyrics)
     
-    
+
     print "---------------------------"
     
     try:
@@ -321,7 +354,10 @@ if __name__ == "__main__":
             pass
     print "---------------------------"
     if setLyrics(filename,lyrics):
-      print "Saved lyrics to file "+filename
+      try:
+        print "Saved lyrics to file "+filename
+      except:
+        print "Saved lyrics to file."
       threading._sleep(3)
     else:
       print "Could not save lyrics to file "+filename
