@@ -136,7 +136,12 @@ def setLyrics(filepath,lyrics):
   else:
     print "###unkown file type: ",type(audiofile)
     return False
-  audiofile.save()
+  try:
+    audiofile.save()
+  except mutagen.MutagenError as e:
+      print "Could not save file:"
+      print e
+      return False
   return True
 
 if __name__ == "__main__":
@@ -361,7 +366,7 @@ if __name__ == "__main__":
       threading._sleep(3)
     else:
       print "Could not save lyrics to file "+filename
-      threading._sleep(10)
+      threading._sleep(60)
   else:
     print "No song results for "+song+" by "+artist
     threading._sleep(10)
