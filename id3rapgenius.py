@@ -62,7 +62,7 @@ def unescape(text):
         return text  # leave as is
     try:
         return re.sub(r"&#?\w+;", fixup, text)
-    except:
+    except BaseException:
         return text
 
 
@@ -110,7 +110,7 @@ def getUrl(url, getEncoding=False):
         if getEncoding:
             try:
                 enc = fs.headers.get("Content-Type").split("charset=")[1]
-            except:
+            except BaseException:
                 enc = "utf-8"
             return data, enc
 
@@ -129,7 +129,7 @@ def setLyrics(filepath, lyrics):
         try:
             lyrics = lyrics.decode(enc)
             break
-        except:
+        except BaseException:
             pass
 
     # try to write to file
@@ -173,7 +173,7 @@ if __name__ == "__main__":
 
     try:
         print "Trying exact name: " + artist.replace(" ", "-") + '-' + song.replace(" ", "-")
-    except:
+    except BaseException:
         print "Trying exact name: %r - %r" % (artist.replace(" ", "-"), song.replace(" ", "-"))
     try:
         html = getUrl(url)
@@ -201,7 +201,7 @@ if __name__ == "__main__":
             except UnicodeDecodeError:
                 try:
                     print filename.encode(encoding="ascii", errors="ignore"), tartist.encode(encoding="ascii", errors="ignore"), song.encode(encoding="ascii", errors="ignore")
-                except:
+                except BaseException:
                     pass
             url = local['baseurl'] + '/' + tartist.replace(" ", "-").replace(
                 "&", "and") + '-' + song.replace(" ", "-").replace("&", "and") + "-lyrics"
@@ -210,7 +210,7 @@ if __name__ == "__main__":
             except UnicodeDecodeError:
                 try:
                     print "Trying exact name: " + tartist.replace(" ", "-").replace("&", "and").encode(encoding="ascii", errors="ignore") + '-' + song.replace(" ", "-").replace("&", "and").encode(encoding="ascii", errors="ignore")
-                except:
+                except BaseException:
                     print "Trying exact name"
             try:
                 html = getUrl(url)
@@ -233,18 +233,17 @@ if __name__ == "__main__":
                 "Feat")[0].split("ft.")[0].split("Ft.")[0].strip()
             try:
                 print artist + " - " + song
-            except:
+            except BaseException:
                 print "%r - %r" % (artist, song)
             print ""
             print "Searching on website with:"
             try:
                 print "Artist: " + searchartist.decode("utf8").encode("ibm437")
                 print "Song:   " + searchsong.decode("utf8").encode("ibm437")
-            except:
+            except BaseException:
                 pass
             searchurl = local['basesearchurl'] + "/search?hide_unexplained_songs=false&q=" + \
-                urllib.quote_plus(searchartist) + "%20" + \
-                urllib.quote_plus(searchsong)
+                urllib.quote_plus(searchartist) + "%20" + urllib.quote_plus(searchsong)
 
             try:
                 text, encoding = getUrl(local["baseapiurl"] +
@@ -285,7 +284,7 @@ if __name__ == "__main__":
                     results.append([resultname, resulturl])
                     try:
                         print "%2d: %s" % (i, resultname.encode(encoding="ibm437", errors="ignore"))
-                    except:
+                    except BaseException:
                         print "%2d: %r" % (i, resultname)
                     i += 1
                 print "---------------------------"
@@ -293,7 +292,7 @@ if __name__ == "__main__":
                     print "Please choose song          (0 to exit)"
                     try:
                         print "close to: " + artist.decode("utf8").encode("ibm437") + " - " + song.decode("utf8").encode("ibm437")
-                    except:
+                    except BaseException:
                         pass
                     inp = input()
                     try:
@@ -311,7 +310,7 @@ if __name__ == "__main__":
                 print ""
                 try:
                     print "Downloading lyrics #%d: %s" % (val, results[val - 1][0])
-                except:
+                except BaseException:
                     print "Downloading lyrics #%d: %r" % (val, results[val - 1][0])
                 print ""
                 #url = local['baseurl']+results[val-1][1]
@@ -382,14 +381,14 @@ if __name__ == "__main__":
         except UnicodeEncodeError:
             try:
                 print lyrics.encode(sys.stdout.encoding, errors='ignore')
-            except:
+            except BaseException:
                 print "##Sorry, encoding problems with terminal##"
                 pass
         print "---------------------------"
         if setLyrics(filename, lyrics):
             try:
                 print "Saved lyrics to file " + filename
-            except:
+            except BaseException:
                 print "Saved lyrics to file."
             threading._sleep(3)
         else:
