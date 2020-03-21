@@ -1,13 +1,15 @@
 genius downloader
 =================
 
-Downloads lyrics from rapgenius.com and saves the lyrics in a mp3 or m4a file.
-You can select the correct lyrics from the first 20 search results. 
+Downloads lyrics from [genius.com](https://genius.com/) and saves the lyrics in a mp3 or m4a file.
+
+You can select the correct lyrics from the first 20 search results.
+
 Written in Python using the mutagen module.
 
 Required:
- * Python 2.7
- * [Mutagen](https://bitbucket.org/lazka/mutagen) python module `pip2 install mutagen` 
+ * Python 3.8
+ * [Mutagen](https://bitbucket.org/lazka/mutagen) python module `pip install mutagen`
 
 
 **Usage**: python id3rapgenius.py filename artist songname
