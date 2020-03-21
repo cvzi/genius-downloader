@@ -75,11 +75,14 @@ class doingSth(threading.Thread):
         self.exitFlag = 0
 
     def run(self):
-        while 0 == self.exitFlag:
-            time.sleep(0.3)
-            print("\r", (".  " if self.i == 0 else (".. " if self.i == 1 else ("..." if self.i == 2 else "   "))), end=' ')
-            self.i = (self.i + 1) % 4
-        print("\r", end=' ')
+        if not 'idlelib.run' in sys.modules:
+            while 0 == self.exitFlag:
+                time.sleep(0.3)
+                print("\r", (".  " if self.i == 0 else (".. " if self.i == 1 else ("..." if self.i == 2 else "   "))), end=' ')
+                self.i = (self.i + 1) % 4
+            print("\r", end='')
+        else:
+            print('Downloading...')
 
     def exit(self):
         self.exitFlag = 1
@@ -96,6 +99,8 @@ def getUrl(url, json=False):
         thread1.start()
         try:
             response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+            if response.status_code != 200:
+                raise requests.HTTPError(response.status_code)
             if json:
                 data = response.json()
             else:
@@ -144,35 +149,20 @@ def setLyrics(filepath, lyrics):
     return True
 
 
-def main():
-    if len(sys.argv) != 4:
-        print("Error: Wrong argument number")
-        print("\n" + local['usage'])
-        quit(1)
-
-    filename = sys.argv[1]
-    artist = sys.argv[2].strip()
-    song = sys.argv[3].strip()
-
-    print("%r\n%r\n%r" % (sys.argv[1], sys.argv[2], sys.argv[3]))
+def main(filename, artist, song):
+    #print("%r\n%r\n%r" % (sys.argv[1], sys.argv[2], sys.argv[3]))
 
     foundsong = False
 
-    url = local['baseurl'] + '/' + \
-        artist.replace(" ", "-") + '-' + song.replace(" ", "-") + "-lyrics"
+    exactName = artist.replace(" ", "-") + '-' + song.replace(" ", "-") + "-lyrics"
+    url = local['baseurl'] + '/' + exactName
 
-    try:
-        print("Trying exact name: " + artist.replace(" ", "-") + '-' + song.replace(" ", "-"))
-    except BaseException:
-        print("Trying exact name: %r - %r" % (artist.replace(" ", "-"), song.replace(" ", "-")))
+
+    print("Trying exact name: " + exactName)
     try:
         html = getUrl(url)
-        print('yeah')
-        print(url)
     except requests.HTTPError:
         html = "<h1>Looks like you came up short!<br>(Page not found)</h1>"
-    except KeyboardInterrupt:
-        sys.exit()  # Exit program on Ctrl-C
 
     if not "<h1>Looks like you came up short!<br>(Page not found)</h1>" in html:
         # Page exists:
@@ -188,28 +178,14 @@ def main():
                 tartist = artist
             tartist = tartist.split("(")[0].split("feat")[0].split(
                 "Feat")[0].split("ft.")[0].split("Ft.")[0].strip()
-            try:
-                print(filename.encode(encoding="ibm437", errors="ignore"), tartist.encode(encoding="ibm437", errors="ignore"), song.encode(encoding="ibm437", errors="ignore"))
-            except UnicodeDecodeError:
-                try:
-                    print(filename.encode(encoding="ascii", errors="ignore"), tartist.encode(encoding="ascii", errors="ignore"), song.encode(encoding="ascii", errors="ignore"))
-                except BaseException:
-                    pass
+            print(filename, tartist, song)
             url = local['baseurl'] + '/' + tartist.replace(" ", "-").replace(
                 "&", "and") + '-' + song.replace(" ", "-").replace("&", "and") + "-lyrics"
-            try:
-                print("Trying exact name: " + tartist.replace(" ", "-").replace("&", "and").encode(encoding="ibm437", errors="ignore") + '-' + song.replace(" ", "-").replace("&", "and").encode(encoding="ibm437", errors="ignore"))
-            except UnicodeDecodeError:
-                try:
-                    print("Trying exact name: " + tartist.replace(" ", "-").replace("&", "and").encode(encoding="ascii", errors="ignore") + '-' + song.replace(" ", "-").replace("&", "and").encode(encoding="ascii", errors="ignore"))
-                except BaseException:
-                    print("Trying exact name")
+            print("Trying exact name: " + tartist.replace(" ", "-").replace("&", "and") + '-' + song.replace(" ", "-").replace("&", "and"))
             try:
                 html = getUrl(url)
             except requests.HTTPError:
                 html = "<h1>Looks like you came up short!<br>(Page not found)</h1>"
-            except KeyboardInterrupt:
-                sys.exit()  # Exit program on Ctrl-C
 
             if not "<h1>Looks like you came up short!<br>(Page not found)</h1>" in html:
                 # Page exists:
@@ -223,17 +199,11 @@ def main():
                 "ft.")[0].split("Ft.")[0].replace("The ", "").replace("the ", "").strip()
             searchsong = song.split("(")[0].split("feat")[0].split(
                 "Feat")[0].split("ft.")[0].split("Ft.")[0].strip()
-            try:
-                print(artist + " - " + song)
-            except BaseException:
-                print("%r - %r" % (artist, song))
+            print(artist + " - " + song)
             print("")
             print("Searching on website with:")
-            try:
-                print("Artist: " + searchartist.decode("utf8").encode("ibm437"))
-                print("Song:   " + searchsong.decode("utf8").encode("ibm437"))
-            except BaseException:
-                pass
+            print("Artist: " + searchartist)
+            print("Song:   " + searchsong)
             searchurl = local['basesearchurl'] + "/search?hide_unexplained_songs=false&q=" + \
                 urllib.parse.quote_plus(searchartist) + "%20" + urllib.parse.quote_plus(searchsong)
 
@@ -247,9 +217,7 @@ def main():
             except requests.HTTPError as e:
                 print("Could not open: " + searchurl)
                 print(e)
-                exit()
-            except KeyboardInterrupt:
-                sys.exit()  # Exit program on Ctrl-C
+                return 70
 
             results_length = 0
 
@@ -259,7 +227,7 @@ def main():
             if 0 == results_length:
                 print("0 songs found!")
             else:
-                print("## -------------------------")
+                print("## -------------------------------------")
                 results = []
                 i = 1
                 for hit in obj["response"]["sections"][0]["hits"]:
@@ -269,28 +237,20 @@ def main():
                     resultartist = hit["result"]["primary_artist"]["name"]
 
                     resultname = resultartist + " - " + resultsongname
-                    resultname = resultname.replace(
-                        "\u200b", "").replace(
-                        "\xa0", " ").strip()
+                    resultname = resultname.replace("\u200b", "").replace("\xa0", " ").strip()
 
                     results.append([resultname, resulturl])
-                    try:
-                        print("%2d: %s" % (i, resultname.encode(encoding="ibm437", errors="ignore")))
-                    except BaseException:
-                        print("%2d: %r" % (i, resultname))
+                    print("%2d: %s" % (i, resultname))
                     i += 1
-                print("---------------------------")
+                print(" ---------------------------------------")
                 while True:
                     print("Please choose song          (0 to exit)")
-                    try:
-                        print("close to: " + artist.decode("utf8").encode("ibm437") + " - " + song.decode("utf8").encode("ibm437"))
-                    except BaseException:
-                        pass
+                    print("close to: " + artist + " - " + song)
                     inp = eval(input())
                     try:
                         val = int(inp)
                         if 0 == val:
-                            exit()
+                            sys.exit(0)
                         assert val > 0
                         assert val < i
                         break
@@ -300,13 +260,8 @@ def main():
                         print("Wtf?!")
 
                 print("")
-                try:
-                    print("Downloading lyrics #%d: %s" % (val, results[val - 1][0]))
-                except BaseException:
-                    print("Downloading lyrics #%d: %r" % (val, results[val - 1][0]))
+                print("Downloading lyrics #%d: %s" % (val, results[val - 1][0]))
                 print("")
-                #url = local['baseurl']+results[val-1][1]
-                # in newer versions, the url seems to be complete already
                 url = results[val - 1][1]
 
                 try:
@@ -314,9 +269,7 @@ def main():
                 except requests.HTTPError as e:
                     print("Could not open: " + url)
                     print(e)
-                    exit()
-                except KeyboardInterrupt:
-                    sys.exit()  # Exit program on Ctrl-C
+                    return 69
 
                 if not "<h1>Looks like you came up short!<br>(Page not found)</h1>" in html:
                     # Page exists:
@@ -328,7 +281,7 @@ def main():
         if "for this song have yet to be released" in html:
             print("Lyrics for this song have yet to be released. Please check back once the song has been released.")
             time.sleep(10)
-            exit(0)
+            return 68
 
         if '<div class="lyrics">' in html:
             # Legacy page design (before March 2020)
@@ -360,7 +313,7 @@ def main():
                 lyrics = "".join(lyrics_arr)
             else:
                 print(f"Unkown page design for {url}")
-                return
+                return 67
 
 
         # Remove <script>...</script>
@@ -391,7 +344,6 @@ def main():
         lyrics = []
         for line in lines:
             esc = unescape(line)
-            print(esc)
             lyrics.append(str(esc))
 
         lyrics = "\n".join(lyrics)
@@ -413,12 +365,26 @@ def main():
             except BaseException:
                 print("Saved lyrics to file.")
             time.sleep(3)
+            return 0
         else:
             print("Could not save lyrics to file " + filename)
             time.sleep(60)
+            return 66
     else:
         print("No song results for " + song + " by " + artist)
         time.sleep(10)
+        return 65
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 4:
+        print("Error: Wrong argument number")
+        print("\n" + local['usage'])
+        sys.exit(64)
+
+    filename = sys.argv[1]
+    artist = sys.argv[2].strip()
+    song = sys.argv[3].strip()
+    try:
+        sys.exit(main(filename, artist, song))
+    except KeyboardInterrupt:
+        sys.exit(130)  # Exit program on Ctrl-C
