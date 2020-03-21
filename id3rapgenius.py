@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 # Python 3.8
 # https://github.com/cvzi/genius-downloader
-# Download lyrics from rap.genius.com and saves the lyrics in a mp3 or m4a file
+# Download lyrics from genius.com and saves the lyrics in a mp3 or m4a file
 
 import sys
-import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
+import requests
+import urllib.parse
 import re
 import time
 import threading
@@ -17,10 +17,10 @@ from mutagen.id3 import USLT
 import mutagen.mp4
 
 local = {
-    'baseurl': "http://rap.genius.com",  # without trailing slash
+    'baseurl': "http://genius.com",  # without trailing slash
     'basesearchurl': "http://genius.com",  # same here
     'baseapiurl': "https://genius.com/api",  # same here
-    'usage': """Downloads lyrics from rap.genius.com and saves the lyrics in a mp3 or m4a file
+    'usage': """Downloads lyrics from genius.com and saves the lyrics in a mp3 or m4a file
 You can select the correct lyrics from the first 20 search results.
 Usage: python id3rapgenius.py filename artist songname
 This was inteded as a Mp3Tag extension.
@@ -88,32 +88,23 @@ class doingSth(threading.Thread):
 # Download from url with progress dots
 
 
-def getUrl(url, getEncoding=False):
+def getUrl(url, json=False):
+    data = None
+    url = url
     try:
         thread1 = doingSth()
         thread1.start()
-        fs = None
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            fs = urllib.request.urlopen(req)
-            data = fs.read()
+            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+            if json:
+                data = response.json()
+            else:
+                data = response.text
         except KeyboardInterrupt as ki:
             thread1.exit()
             raise ki  # allow CTRL-C to interrupt
         finally:
-            if fs is not None:
-                fs.close()
             thread1.exit()
-
-        #data = unicode(data,'UTF8')
-        #data = data.encode("utf-8")
-
-        if getEncoding:
-            try:
-                enc = fs.headers.get("Content-Type").split("charset=")[1]
-            except BaseException:
-                enc = "utf-8"
-            return data, enc
 
         return data
     except Exception as e:
@@ -153,8 +144,7 @@ def setLyrics(filepath, lyrics):
     return True
 
 
-if __name__ == "__main__":
-
+def main():
     if len(sys.argv) != 4:
         print("Error: Wrong argument number")
         print("\n" + local['usage'])
@@ -176,8 +166,10 @@ if __name__ == "__main__":
     except BaseException:
         print("Trying exact name: %r - %r" % (artist.replace(" ", "-"), song.replace(" ", "-")))
     try:
-        html = getUrl(url).decode('utf-8')
-    except urllib.error.HTTPError:
+        html = getUrl(url)
+        print('yeah')
+        print(url)
+    except requests.HTTPError:
         html = "<h1>Looks like you came up short!<br>(Page not found)</h1>"
     except KeyboardInterrupt:
         sys.exit()  # Exit program on Ctrl-C
@@ -214,7 +206,7 @@ if __name__ == "__main__":
                     print("Trying exact name")
             try:
                 html = getUrl(url)
-            except urllib.error.HTTPError:
+            except requests.HTTPError:
                 html = "<h1>Looks like you came up short!<br>(Page not found)</h1>"
             except KeyboardInterrupt:
                 sys.exit()  # Exit program on Ctrl-C
@@ -245,20 +237,20 @@ if __name__ == "__main__":
             searchurl = local['basesearchurl'] + "/search?hide_unexplained_songs=false&q=" + \
                 urllib.parse.quote_plus(searchartist) + "%20" + urllib.parse.quote_plus(searchsong)
 
+            obj = None
             try:
-                text, encoding = getUrl(local["baseapiurl"] +
+                obj = getUrl(local["baseapiurl"] +
                                         "/search/song?q=" +
                                         urllib.parse.quote_plus(searchartist) +
                                         "%20" +
-                                        urllib.parse.quote_plus(searchsong), getEncoding=True)
-            except urllib.error.HTTPError as e:
+                                        urllib.parse.quote_plus(searchsong), json=True)
+            except requests.HTTPError as e:
                 print("Could not open: " + searchurl)
                 print(e)
                 exit()
             except KeyboardInterrupt:
                 sys.exit()  # Exit program on Ctrl-C
 
-            obj = json.loads(text, encoding=encoding)
             results_length = 0
 
             assert obj["response"]["sections"][0]["type"] == "song", "Wrong type in json result"
@@ -319,8 +311,7 @@ if __name__ == "__main__":
 
                 try:
                     html = getUrl(url)
-                    print(url)
-                except urllib.error.HTTPError as e:
+                except requests.HTTPError as e:
                     print("Could not open: " + url)
                     print(e)
                     exit()
@@ -334,12 +325,43 @@ if __name__ == "__main__":
                     print("URL wrong?! " + url)
 
     if foundsong:
-        lyrics = html.split('<div class="lyrics">')[1].split("</div>")[0]
-
-        if "for this song have yet to be released" in lyrics:
+        if "for this song have yet to be released" in html:
             print("Lyrics for this song have yet to be released. Please check back once the song has been released.")
             time.sleep(10)
             exit(0)
+
+        if '<div class="lyrics">' in html:
+            # Legacy page design (before March 2020)
+            lyrics = html.split('<div class="lyrics">')[1].split("</div>")[0]
+        else:
+            # New design
+            if '__PRELOADED_STATE__ = JSON.parse(' in html:
+                # Example: https://genius.com/Friedberg-go-wild-lyrics?react=1
+                json_str = html.split("__PRELOADED_STATE__ = JSON.parse('")[1].split("');\n")[0]
+                json_str = re.sub('\\\([^\\\])', '\\1', json_str)
+
+                jdata = json.loads(json_str)
+
+                def parseJdata(obj, arr):
+                    if arr is None:
+                        arr = []
+                    if not 'children' in obj:
+                        return arr
+                    for child in obj['children']:
+                        if type(child) is str:
+                            arr.append(child)
+                        else:
+                            parseJdata(child, arr)
+                            if child['tag'] == 'br':
+                                arr.append('\n')
+                    return arr
+
+                lyrics_arr = parseJdata(jdata['songPage']['lyricsData']['body'], [])
+                lyrics = "".join(lyrics_arr)
+            else:
+                print(f"Unkown page design for {url}")
+                return
+
 
         # Remove <script>...</script>
         while "<script" in lyrics:
@@ -397,3 +419,6 @@ if __name__ == "__main__":
     else:
         print("No song results for " + song + " by " + artist)
         time.sleep(10)
+
+if __name__ == "__main__":
+    main()
