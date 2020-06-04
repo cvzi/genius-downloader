@@ -292,6 +292,7 @@ def main(filename, artist, song):
                 # Example: https://genius.com/Friedberg-go-wild-lyrics?react=1
                 json_str = html.split("__PRELOADED_STATE__ = JSON.parse('")[1].split("');\n")[0]
                 json_str = re.sub('\\\([^\\\])', '\\1', json_str)
+                json_str = re.sub(r'\\\\', r'\\', json_str)
 
                 jdata = json.loads(json_str)
 
