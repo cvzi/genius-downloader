@@ -389,3 +389,7 @@ if __name__ == "__main__":
         sys.exit(main(filename, artist, song))
     except KeyboardInterrupt:
         sys.exit(130)  # Exit program on Ctrl-C
+    except e:
+        print(e)
+        time.sleep(10)
+        sys.exit(71)
