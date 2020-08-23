@@ -14,6 +14,9 @@ Required:
 
 **Usage**: python id3rapgenius.py filename artist songname
 
+![Animated screenshot of terminal](screenshots/screencapture.gif)
+
+
 This was originally inteded as a [Mp3Tag](http://www.mp3tag.de) extension.
 To add it to the Mp3Tag context menu, do the following steps in Mp3Tag:
  * Open Tools -> Options -> Tools 
@@ -23,4 +26,4 @@ To add it to the Mp3Tag context menu, do the following steps in Mp3Tag:
  * For parameter use: C:\pathtofile\id3rapgenius.py "%_path%" "$replace(%artist%,","")" "$replace(%title%,","")"
  * Accept the "for all selected files" option
  
-![Mp3Tag instructions](https://raw.githubusercontent.com/cvzi/genius-downloader/master/id3rapgenius.jpg)
+![Mp3Tag instructions](screenshots/id3rapgenius.jpg)
