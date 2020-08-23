@@ -12,7 +12,7 @@ Required:
  * [Mutagen](https://bitbucket.org/lazka/mutagen) python module `pip install mutagen`
 
 
-**Usage**: python id3rapgenius.py filename artist songname
+**Usage**: `python id3rapgenius.py filename artist songname`
 
 ![Animated screenshot of terminal](screenshots/screencapture.gif)
 
