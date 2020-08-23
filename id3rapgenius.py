@@ -10,6 +10,8 @@ import urllib.parse
 import re
 import time
 import threading
+import platform
+import ctypes
 import html.entities
 import json
 from mutagen import *
@@ -30,19 +32,18 @@ To add it to the Mp3Tag context menu, do the following steps in Mp3Tag:
   * Enter the name that shall appear in the context menu
   * For path choose your python.exe
   * For parameter use: C:\pathtofile\id3rapgenius.py "%_path%" "$replace(%artist%,","")" "$replace(%title%,","")"
-  * Accept the "for all selected files" option"""
+  * Accept the "for all selected files" option""",
+    'colorInTerminal' : True
 }
 
 
-# http://effbot.org/zone/re-sub.htm#unescape-html
-
-##
-# Removes HTML or XML character references and entities from a text string.
-#
-# @param text The HTML (or XML) source text.
-# @return The plain text, as a Unicode string, if necessary.
-
 def unescape(text):
+    """http://effbot.org/zone/re-sub.htm#unescape-html
+Removes HTML or XML character references and entities from a text string.
+
+@param text The HTML (or XML) source text.
+@return The plain text, as a Unicode string, if necessary.
+"""
     def fixup(m):
         text = m.group(0)
         if text[:2] == "&#":
@@ -88,10 +89,22 @@ class doingSth(threading.Thread):
         self.exitFlag = 1
         time.sleep(0.4)
 
-# Download from url with progress dots
-
+def highlightMatch(a, b, flags=re.IGNORECASE):
+    if not local['colorInTerminal']:
+        return b
+    BGGREEN = '\033[42m'
+    ENDC = '\033[0m'
+    splits = [fr"\b{re.escape(x)}\b" for x in re.split(r'(\W)', a)]
+    def repl(m):
+        if len(m[0]) < 2:
+            return m[0]
+        return f"{BGGREEN}{m[0]}{ENDC}"
+    s = re.sub("|".join(splits), repl, b, flags=flags)
+    s = re.sub(fr"{re.escape(ENDC)}(\W+){re.escape(BGGREEN)}", lambda m: m[1], s)
+    return s
 
 def getUrl(url, json=False):
+    """Download from url with progress dots"""
     data = None
     url = url
     try:
@@ -116,10 +129,12 @@ def getUrl(url, json=False):
         thread1.exit()
         raise e
 
-# Set Lyrics of mp3 or m4a file
+
 
 
 def setLyrics(filepath, lyrics):
+    """Set Lyrics of mp3 or m4a file"""
+
     # find correct encoding
     for enc in ('utf8', 'iso-8859-1', 'iso-8859-15',
                 'cp1252', 'cp1251', 'latin1'):
@@ -227,6 +242,7 @@ def main(filename, artist, song):
             if 0 == results_length:
                 print("0 songs found!")
             else:
+                # List search results
                 print("## -------------------------------------")
                 results = []
                 i = 1
@@ -240,7 +256,7 @@ def main(filename, artist, song):
                     resultname = resultname.replace("\u200b", "").replace("\xa0", " ").strip()
 
                     results.append([resultname, resulturl])
-                    print("%2d: %s" % (i, resultname))
+                    print("%2d: %s" % (i, highlightMatch(artist + " - " + song, resultname)))
                     i += 1
                 print(" ---------------------------------------")
                 while True:
@@ -382,6 +398,17 @@ if __name__ == "__main__":
         print("\n" + local['usage'])
         sys.exit(64)
 
+
+    if local['colorInTerminal'] and platform.system() == 'Windows':
+        # Enable VT100 sequences (colored font/background in terminal)
+        # https://docs.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences#example-of-sgr-terminal-sequences
+        kernel32 = ctypes.WinDLL('kernel32')
+        stdOut = kernel32.GetStdHandle(-11)
+        consoleMode = ctypes.c_ulong()
+        kernel32.GetConsoleMode(stdOut, ctypes.byref(consoleMode))
+        consoleMode.value |= 4
+        kernel32.SetConsoleMode(stdOut, consoleMode)
+
     filename = sys.argv[1]
     artist = sys.argv[2].strip()
     song = sys.argv[3].strip()
@@ -389,7 +416,7 @@ if __name__ == "__main__":
         sys.exit(main(filename, artist, song))
     except KeyboardInterrupt:
         sys.exit(130)  # Exit program on Ctrl-C
-    except e:
+    except Exception as e:
         print(e)
         time.sleep(10)
         sys.exit(71)
