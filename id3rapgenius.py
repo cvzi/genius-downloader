@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Python 3.8
+# Python 3.11
 # https://github.com/cvzi/genius-downloader
 # Download lyrics from genius.com and saves the lyrics in a mp3 or m4a file
 
@@ -390,7 +390,7 @@ def main(filename, artist, song):
     else:
         print("No song results for " + song + " by " + artist)
         time.sleep(10)
-        return 65
+        return 0
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
