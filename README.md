@@ -8,7 +8,7 @@ You can select the correct lyrics from the first 20 search results.
 Written in Python using the mutagen module.
 
 Required:
- * Python 3.8
+ * Python 3.11
  * [Mutagen](https://bitbucket.org/lazka/mutagen) python module `pip install mutagen`
 
 
