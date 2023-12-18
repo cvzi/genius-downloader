@@ -31,7 +31,7 @@ To add it to the Mp3Tag context menu, do the following steps in Mp3Tag:
   * Click on the "New" icon
   * Enter the name that shall appear in the context menu
   * For path choose your python.exe
-  * For parameter use: C:\pathtofile\id3rapgenius.py "%_path%" "$replace(%artist%,","")" "$replace(%title%,","")"
+  * For parameter use: C:\\pathtofile\\id3rapgenius.py "%_path%" "$replace(%artist%,","")" "$replace(%title%,","")"
   * Accept the "for all selected files" option""",
     'colorInTerminal' : True
 }
@@ -307,7 +307,7 @@ def main(filename, artist, song):
             if '__PRELOADED_STATE__ = JSON.parse(' in html:
                 # Example: https://genius.com/Friedberg-go-wild-lyrics?react=1
                 json_str = html.split("__PRELOADED_STATE__ = JSON.parse('")[1].split("');\n")[0]
-                json_str = re.sub('\\\([^\\\])', '\\1', json_str)
+                json_str = re.sub(r'\\([^\\])', r'\1', json_str)
                 json_str = re.sub(r'\\\\', r'\\', json_str)
 
                 jdata = json.loads(json_str)
