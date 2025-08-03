@@ -111,7 +111,9 @@ def getUrl(url, json=False):
         thread1 = doingSth()
         thread1.start()
         try:
-            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+            response = requests.get(url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0'
+                })
             if response.status_code != 200:
                 raise requests.HTTPError(response.status_code)
             if json:
@@ -219,16 +221,11 @@ def main(filename, artist, song):
             print("Searching on website with:")
             print("Artist: " + searchartist)
             print("Song:   " + searchsong)
-            searchurl = local['basesearchurl'] + "/search?hide_unexplained_songs=false&q=" + \
-                urllib.parse.quote_plus(searchartist) + "%20" + urllib.parse.quote_plus(searchsong)
 
+            searchurl = local["baseapiurl"] + "/search/song?q=" + urllib.parse.quote_plus(searchartist) + "%20" + urllib.parse.quote_plus(searchsong)
             obj = None
             try:
-                obj = getUrl(local["baseapiurl"] +
-                                        "/search/song?q=" +
-                                        urllib.parse.quote_plus(searchartist) +
-                                        "%20" +
-                                        urllib.parse.quote_plus(searchsong), json=True)
+                obj = getUrl(searchurl, json=True)
             except requests.HTTPError as e:
                 print("Could not open: " + searchurl)
                 print(e)
